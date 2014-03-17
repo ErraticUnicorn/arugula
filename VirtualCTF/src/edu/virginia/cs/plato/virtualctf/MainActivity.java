@@ -1,8 +1,10 @@
-package edu.plato.virginia.cs.virtualctf;
+package edu.virginia.cs.plato.virtualctf;
 
-import android.os.Bundle;
 import android.app.Activity;
+import android.os.Bundle;
 import android.view.Menu;
+import edu.virginia.cs.plato.virtualctf.util.HTTPManager;
+import edu.virginia.cs.plsto.virtualctf.R;
 
 public class MainActivity extends Activity {
 
@@ -10,6 +12,8 @@ public class MainActivity extends Activity {
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
+		
+		HTTPManager.getActiveGames();
 	}
 
 	@Override
