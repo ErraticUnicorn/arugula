@@ -3,6 +3,6 @@
 
     <string name="app_name">VirtualCTF</string>
     <string name="action_settings">Settings</string>
-    <string name="hello_world">That's some fine arugula you got there, Liam!</string>
+    <string name="hello_world">That\'s some fine arugula you got there, Liam!</string>
 
 </resources>
