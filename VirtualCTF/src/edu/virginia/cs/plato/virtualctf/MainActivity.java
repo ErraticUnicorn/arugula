@@ -3,7 +3,16 @@ package edu.virginia.cs.plato.virtualctf;
 import android.app.Activity;
 import android.os.Bundle;
 import android.view.Menu;
+import android.view.View;
+import android.view.View.OnClickListener;
+import android.widget.Button;
+import android.widget.TextView;
+
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+
 import edu.virginia.cs.plato.virtualctf.util.HTTPManager;
+import edu.virginia.cs.plato.virtualctf.util.JsonCallback;
 import edu.virginia.cs.plsto.virtualctf.R;
 
 public class MainActivity extends Activity {
@@ -13,7 +22,7 @@ public class MainActivity extends Activity {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
 		
-		HTTPManager.getActiveGames();
+		
 	}
 
 	@Override
@@ -23,4 +32,28 @@ public class MainActivity extends Activity {
 		return true;
 	}
 
+	public void getActiveGames() {
+
+		HTTPManager.getActiveGames(new JsonCallback() {
+
+			@Override
+			public void call(JsonArray params) {
+
+				Game[] res = new Game[params.size()];
+				Gson gson = new Gson();
+
+				for (int i = 0; i < params.size(); i++) {
+					res[i] = gson.fromJson(params.get(i), Game.class);
+				}
+
+				String str = "";
+				for(Game g : res) {
+					str += "\n" + g.toString();
+				}
+				
+			}
+			
+		});
+	}
+	
 }
