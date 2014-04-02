@@ -1,8 +1,13 @@
 package edu.virginia.cs.plato.virtualctf;
 
+import android.app.ActionBar.LayoutParams;
 import android.app.Activity;
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.Menu;
+import android.view.View;
+import android.widget.Button;
+import android.widget.LinearLayout;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
@@ -17,8 +22,8 @@ public class MainActivity extends Activity {
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
-		
-		
+
+
 	}
 
 	@Override
@@ -42,17 +47,38 @@ public class MainActivity extends Activity {
 					res[i] = gson.fromJson(params.get(i), Game.class);
 				}
 
-				String str = "";
+				//				String str = "";
 				for(Game g : res) {
-					str += "\n" + g.toString();
+					//					str += "\n" + g.toString();
+					makeButton(g);
 				}
-				
+
 			}
-			
+
 		});
 	}
-	
+
 	public void addButton() {
 		findViewById(R.id.gameList);
 	}
+
+	public void onCreateNewGame(View v) {
+		Intent i = new Intent(getApplicationContext(), NewGameActivity.class);
+		startActivity(i);
+	}
+
+	public void makeButton(Game g) {
+		Button btn = new Button(this);
+		btn.setId(g.getId());
+		btn.setText(g.getName() + "Start: " + g.getStart() + "End: " + g.getEnd() + "Join");
+		LinearLayout ll = (LinearLayout)findViewById(R.id.gameList);
+		LayoutParams lp = new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
+		ll.addView(btn, lp);
+		btn.setOnClickListener(new View.OnClickListener() {
+			public void onClick(View view) {
+				//Calls join method
+			}
+		});
+	}
+
 }
