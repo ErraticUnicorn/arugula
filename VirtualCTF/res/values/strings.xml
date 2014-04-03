@@ -8,5 +8,18 @@
     <string name="new_game">New Game</string>
     <string name="title_activity_new_game">NewGameActivity</string>
     <string name="title_activity_new_game_bounds">NewGameBoundsActivity</string>
+    <string name="getBounds1">Go To Team 1 Bounds</string>
+    <string name="getBounds2">Go To Team 2 Bounds</string>
+    <string name="boundsTitle1">Select Bounds For Team 1</string>
+    <string name="boundsTitle2">Select Bounds For Team 2</string>
+    <string name="title_activity_map">MapActivity</string>
+    
+    <string name="title_section2">Team 1 lost a flag.</string><string name="title_section1">Team 1 grabbed a flag.</string>
+    <string name="title_section3">Team 2 got a flag back to their base.</string>
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
+    <string name="action_example">Example action</string>
+    <string name="create_game">Create Game</string>
+    <string name="google">&lt;Google Maps will go here&gt;</string>
 
 </resources>

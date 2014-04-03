@@ -1,16 +1,28 @@
 package edu.virginia.cs.plato.virtualctf;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
-import android.support.v7.app.ActionBarActivity;
+import android.support.v4.app.FragmentActivity;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import edu.virginia.cs.plsto.virtualctf.R;
+import android.widget.Button;
+import android.widget.TextView;
 
-public class NewGameBoundsActivity extends ActionBarActivity {
+import com.google.gson.JsonArray;
+
+import edu.virginia.cs.plato.virtualctf.util.HTTPManager;
+import edu.virginia.cs.plato.virtualctf.util.JsonCallback;
+
+public class NewGameBoundsActivity extends FragmentActivity {
+
+	private String name;
+	private String pw;
+
+	private boolean teamOne;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -19,7 +31,13 @@ public class NewGameBoundsActivity extends ActionBarActivity {
 
 		if (savedInstanceState == null) {
 			getSupportFragmentManager().beginTransaction()
-					.add(R.id.container, new PlaceholderFragment()).commit();
+			.add(R.id.container, new PlaceholderFragment()).commit();
+		}
+
+		Bundle extras = getIntent().getExtras();
+		if (extras != null) {
+			name = extras.getString("Name");
+//			pw = extras.getString("PW");
 		}
 	}
 
@@ -58,6 +76,34 @@ public class NewGameBoundsActivity extends ActionBarActivity {
 					container, false);
 			return rootView;
 		}
+	}
+
+	public void onSubmit(View v) {
+		if(teamOne) {
+			HTTPManager.createNewGame(new JsonCallback() {
+
+				@Override
+				public void call(JsonArray param) {
+					goToMain();
+				}
+
+			}, name, pw);
+		}
+		else {
+			TextView title = (TextView) findViewById(R.id.bounds_title);
+			Button sub = (Button) findViewById(R.id.submit_bounds);
+
+			title.setText(R.string.boundsTitle2);
+			sub.setText(R.string.create_game);
+
+			teamOne = true;
+		}
+
+	}
+
+	public void goToMain() {
+		Intent i = new Intent(getApplicationContext(), MainActivity.class); 
+		startActivity(i);
 	}
 
 }

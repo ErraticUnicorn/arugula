@@ -67,7 +67,7 @@ public class GetJson extends AsyncTask<String, String, JsonArray> {
 		String url = params[0];
 		try {
 			String webJSON = getJSONfromURL(url);
-			//Log.d("JSON", webJSON);
+			Log.d("JSON", webJSON);
 			JsonParser parser = new JsonParser();
 			res = parser.parse(webJSON).getAsJsonArray();
 		} catch (Exception e) {
