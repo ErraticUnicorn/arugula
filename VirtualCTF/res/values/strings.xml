@@ -21,5 +21,6 @@
     <string name="action_example">Example action</string>
     <string name="create_game">Create Game</string>
     <string name="google">&lt;Google Maps will go here&gt;</string>
+    <string name="back">Back</string>
 
 </resources>
