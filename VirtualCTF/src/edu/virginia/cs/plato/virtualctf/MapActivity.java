@@ -16,7 +16,7 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 
 public class MapActivity extends FragmentActivity implements
-		NavigationDrawerFragment.NavigationDrawerCallbacks {
+NavigationDrawerFragment.NavigationDrawerCallbacks {
 
 	/**
 	 * Fragment managing the behaviors, interactions and presentation of the
@@ -49,9 +49,9 @@ public class MapActivity extends FragmentActivity implements
 		// update the main content by replacing fragments
 		FragmentManager fragmentManager = getSupportFragmentManager();
 		fragmentManager
-				.beginTransaction()
-				.replace(R.id.container,
-						PlaceholderFragment.newInstance(position + 1)).commit();
+		.beginTransaction()
+		.replace(R.id.container,
+				PlaceholderFragment.newInstance(position + 1)).commit();
 	}
 
 	public void onSectionAttached(int number) {
@@ -142,10 +142,18 @@ public class MapActivity extends FragmentActivity implements
 					ARG_SECTION_NUMBER));
 		}
 	}
-	
+
 	public void goToMain(View v) {
 		Intent i = new Intent(getApplicationContext(), MainActivity.class); 
 		startActivity(i);
+	}
+
+	public void share(View v) {
+		Intent shareIntent = new Intent();
+		shareIntent.setAction(Intent.ACTION_SEND); 
+		shareIntent.setType("text/plain");
+		shareIntent.putExtra(Intent.EXTRA_TEXT, "I'm playing a game of VirtualCTF!");
+		startActivity(Intent.createChooser(shareIntent, "Share your game"));
 	}
 
 }

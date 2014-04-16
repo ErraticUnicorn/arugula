@@ -22,5 +22,6 @@
     <string name="create_game">Create Game</string>
     <string name="google">&lt;Google Maps will go here&gt;</string>
     <string name="back">Back</string>
+    <string name="twit">Tweet about your life!</string>
 
 </resources>
