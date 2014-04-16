@@ -2,12 +2,17 @@ package edu.virginia.cs.plato.virtualctf;
 
 import android.app.ActionBar;
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
+import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.widget.DrawerLayout;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -15,9 +20,13 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import com.google.android.gms.maps.model.LatLng;
+
 public class MapActivity extends FragmentActivity implements
 NavigationDrawerFragment.NavigationDrawerCallbacks {
 
+	private static final double TOLERANCE = 5;
+	
 	/**
 	 * Fragment managing the behaviors, interactions and presentation of the
 	 * navigation drawer.
@@ -42,6 +51,38 @@ NavigationDrawerFragment.NavigationDrawerCallbacks {
 		// Set up the drawer.
 		mNavigationDrawerFragment.setUp(R.id.navigation_drawer,
 				(DrawerLayout) findViewById(R.id.drawer_layout));
+		// Acquire a reference to the system Location Manager
+		LocationManager locationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
+
+		// Define a listener that responds to location updates
+		LocationListener locationListener = new LocationListener() {
+			
+			private LatLng last = null;
+			
+		    public void onLocationChanged(Location location) {
+		      // Called when a new location is found by the network location provider.
+		    	LatLng p = new LatLng(location.getLatitude(), location.getLongitude());
+		    	
+		    	double xdist = p.latitude - last.latitude;
+		    	double ydist = p.longitude - last.longitude;
+		    	
+		    	if(last == null || xdist * xdist + ydist * ydist > TOLERANCE) {
+		    		last = p;
+		    		
+		    		Log.e("VirtualCTF", "Now at point " + last.latitude + ", " + last.longitude);
+		    	}
+		    	
+		    }
+
+		    public void onStatusChanged(String provider, int status, Bundle extras) {}
+
+		    public void onProviderEnabled(String provider) {}
+
+		    public void onProviderDisabled(String provider) {}
+		  };
+
+		// Register the listener with the Location Manager to receive location updates
+		locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0l, 0f, locationListener);
 	}
 
 	@Override
