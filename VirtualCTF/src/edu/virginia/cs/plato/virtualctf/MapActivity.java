@@ -26,7 +26,7 @@ public class MapActivity extends FragmentActivity implements
 NavigationDrawerFragment.NavigationDrawerCallbacks {
 
 	private static final double TOLERANCE = 5;
-	
+
 	/**
 	 * Fragment managing the behaviors, interactions and presentation of the
 	 * navigation drawer.
@@ -56,30 +56,32 @@ NavigationDrawerFragment.NavigationDrawerCallbacks {
 
 		// Define a listener that responds to location updates
 		LocationListener locationListener = new LocationListener() {
-			
+
 			private LatLng last = null;
-			
-		    public void onLocationChanged(Location location) {
-		      // Called when a new location is found by the network location provider.
-		    	LatLng p = new LatLng(location.getLatitude(), location.getLongitude());
-		    	
-		    	double xdist = p.latitude - last.latitude;
-		    	double ydist = p.longitude - last.longitude;
-		    	
-		    	if(last == null || xdist * xdist + ydist * ydist > TOLERANCE) {
-		    		last = p;
-		    		
-		    		Log.e("VirtualCTF", "Now at point " + last.latitude + ", " + last.longitude);
-		    	}
-		    	
-		    }
 
-		    public void onStatusChanged(String provider, int status, Bundle extras) {}
+			public void onLocationChanged(Location location) {
+				Log.e("VirtualCTF", "Now at point " + last.latitude + ", " + last.longitude);
 
-		    public void onProviderEnabled(String provider) {}
+				// Called when a new location is found by the network location provider.
+				LatLng p = new LatLng(location.getLatitude(), location.getLongitude());
 
-		    public void onProviderDisabled(String provider) {}
-		  };
+				double xdist = p.latitude - last.latitude;
+				double ydist = p.longitude - last.longitude;
+
+				if(last == null || xdist * xdist + ydist * ydist > TOLERANCE) {
+					last = p;
+
+					Log.e("VirtualCTF", "Now at point " + last.latitude + ", " + last.longitude);
+				}
+
+			}
+
+			public void onStatusChanged(String provider, int status, Bundle extras) {}
+
+			public void onProviderEnabled(String provider) {}
+
+			public void onProviderDisabled(String provider) {}
+		};
 
 		// Register the listener with the Location Manager to receive location updates
 		locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0l, 0f, locationListener);

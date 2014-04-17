@@ -1,5 +1,7 @@
 package edu.virginia.cs.plato.virtualctf;
 
+import com.google.gson.JsonArray;
+
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
@@ -10,6 +12,9 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
+import android.widget.TextView;
+import edu.virginia.cs.plato.virtualctf.util.HTTPManager;
+import edu.virginia.cs.plato.virtualctf.util.JsonCallback;
 
 public class NewGameActivity extends FragmentActivity {
 
@@ -69,5 +74,26 @@ public class NewGameActivity extends FragmentActivity {
 		i.putExtra("Name", name.getText().toString());
 //		i.putExtra("PW", pw.getText().toString());
 		startActivity(i);
+	}
+
+	public void onFindBuilding(View v) {
+		EditText name = (EditText) findViewById(R.id.editText2);
+//		EditText pw = (EditText) findViewById(R.id.editText2);
+		
+		HTTPManager.findBuilding(new JsonCallback() {
+
+			@Override
+			public void call(JsonArray param) {
+				
+				onBuilding(param.getAsJsonArray().toString());
+				
+			}
+			
+		}, name.toString());
+	}
+	
+	public void onBuilding(String res) {
+		TextView t = (TextView) findViewById(R.id.button2);
+		t.setText(res);
 	}
 }

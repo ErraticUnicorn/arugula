@@ -30,5 +30,12 @@ public class HTTPManager {
 
 		call.execute("http://nodejs-arugula.rhcloud.com/"+gameId+"/"+playerId);
 	}
+
+	public static void findBuilding(JsonCallback callback, String building) {
+		
+		GetJson call = new GetJson(callback);
+
+		call.execute("http://plato.cs.virginia.edu/~cs4720s14beet/tracks/view/"+building);
+	}
 	
 }

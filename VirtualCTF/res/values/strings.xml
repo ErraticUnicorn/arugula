@@ -23,5 +23,7 @@
     <string name="google">&lt;Google Maps will go here&gt;</string>
     <string name="back">Back</string>
     <string name="twit">Tweet about your life!</string>
+    <string name="building">Enter a building to find its coordinates</string>
+    <string name="building_button">Send</string>
 
 </resources>
