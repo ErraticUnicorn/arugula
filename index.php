@@ -298,7 +298,8 @@ function tag ($tagger, $taggee, $flag, $teamid, $gameid) {
 
 //THIS FUNCTION NOT TESTED DUE TO BOUNDS BEING UNIMPLEMENTED
 //ALSO NOT FINISHED
-function boundColResolver ($tagger, $flag, $teamid, $gameid) {
+//assumption - bounds is an array of points
+function boundColResolver ($tagger, $flag, $teamid, $gameid, $bounds) {
 	global $mysqli;
 	$query = "SELECT `state` FROM `players` WHERE `player_id` = $tagger ";
 	if($result = $mysqli->query($query)) {
@@ -463,8 +464,33 @@ Players:
 2 - Jailed - The player must return to their bounds before they can collide with others.
 */
 
+//pointInPolygon($lat, $long, $latBounds, $longBounds, $n) 
+// given a point ($lat,$long) and an array of points ($latBounds, $longBounds) of size $n
+// check if that point is inside the polygon created by that array or not
+// adapted from http://alienryderflex.com/polygon/
+
+function pointInPolygon($lat,$long, $latBounds, $longBounds, $n) {
+	$j = $n -1;
+	$oddNodes = false;
+	//latitude = Y coordinate, longitude = X coordinate
+	
+	for ($i=0; $i<$n; i++) {
+		if ($latBounds[$i]<$lat && $latBounds[$j]>=$lat ||  $latBounds[$j]<$lat && $latBounds[$i]>=$lat) {
+			if ($longBounds[$i]+($lat-$latBounds[$i])/($latBounds[$j]-$latBounds[$i])*($longBounds[$j]-$longBounds[$i])<$long) {
+				$oddNodes =! $oddNodes; 
+			}
+		} 
+		$j=$i;
+	 }
+	
+return oddNodes; 
+}
+
+
+
 //betterCreateGame()
 //NEEDS to implement a way to generate random lat/long for flags, given bounds. 
+
 function createBetterGame($name, $bounds) {
 	global $mysqli;
 	$query = "INSERT INTO `games` (name) VALUES($name)" ;
