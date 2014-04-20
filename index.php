@@ -143,12 +143,12 @@ function gpsUpdate($playerid, $lat, $long) {
 	// Check enemy flag's lat/long for collision 
 	$flagCol = checkFlagCollision($enemyFlag, $lat, $long);
 	if($flagCol == true) {
-		pickupFlag($enemyFlag, $playerid);
+		pickupFlag($enemyFlag, $playerid, $teamid, $gameid);
 	}
 	// Check for collisions with enemy players
 	$playerCol = checkEnemyCollisions($teamid, $lat, $long);
 	if ($playerCol != -1) {
-		tag($playerid, $playerCol, $alliedFlag);
+		tag($playerid, $playerCol, $alliedFlag, $teamid, $gameid);
 	}
 }
 
@@ -223,7 +223,6 @@ function checkEnemyCollisions($teamid, $lat, $long){
 				return -1;// NO COLLISION
 			}
 		}
-		$result->free();
 	}
 }
 
@@ -252,7 +251,7 @@ function checkFlagCollision($flagID, $lat, $long){
 // check the Flag's state. If 0 (free), change to 1 (carried) and change  player state to indicate they are carrying flag (1)
 
 
-function pickupFlag ($objectid, $playerid) {
+function pickupFlag ($objectid, $playerid, $teamid, $gameid) {
 //echo "DEBUG: pickupFlag called! ";
 global $mysqli;
 $query = "SELECT `state` FROM `objects` WHERE `object_id` = $objectid ";
@@ -262,6 +261,8 @@ $query = "SELECT `state` FROM `objects` WHERE `object_id` = $objectid ";
 				$query2 = "UPDATE `objects` SET `state` = 1 WHERE `object_id` = $objectid ; UPDATE `players` SET `state` = 1 WHERE `player_id` = $playerid";
 				if( $result2 = $mysqli->multi_query($query2) ) {
 					//echo "Flag picked up!"; // Call a query to create an event
+					echo "DEBUG: Event Handler Called: Parameters: $gameid $playerid $teamid \n";
+					eventHandler("pickup", $gameid, $playerid, $teamid, -1);
 				}
 			}
 		}
@@ -273,7 +274,7 @@ $query = "SELECT `state` FROM `objects` WHERE `object_id` = $objectid ";
 // aka player-player collision handler
 // check the taggee's state - if 1 (carrying flag), change it to 2, and change the flag state to 0 (free)
 // check the player's state. If 1 (carrying flag), update the player's state to 2 (tagged), and update the flag's state to 0.
-function tag ($tagger, $taggee, $flag) {
+function tag ($tagger, $taggee, $flag, $teamid, $gameid) {
 	global $mysqli;
 	$query = "SELECT `state` FROM `players` WHERE `player_id` = $taggee ";
 	if($result = $mysqli->query($query)) {
@@ -283,6 +284,7 @@ function tag ($tagger, $taggee, $flag) {
 				$query2 = "UPDATE `objects` SET `state` = 0 WHERE `object_id` = $flag ; UPDATE `players` SET `state` = 2 WHERE `player_id` = $taggee";
 				if( $result2 = $mysqli->multi_query($query2) ) {
 					//echo "Player $taggee tagged by $tagger!, flag $flag dropped!"; // Call a query to create an event
+					eventHandler("tag", $gameid, $tagger, $teamid, $taggee);
 				}
 			}
 		}
@@ -295,6 +297,7 @@ function tag ($tagger, $taggee, $flag) {
 // else if player's state = 1, update the player's state to 0 and score a point (if that team's flag is uncarried?)
 
 //THIS FUNCTION NOT TESTED DUE TO BOUNDS BEING UNIMPLEMENTED
+//ALSO NOT FINISHED
 function boundColResolver ($tagger, $flag, $teamid, $gameid) {
 	global $mysqli;
 	$query = "SELECT `state` FROM `players` WHERE `player_id` = $tagger ";
@@ -304,11 +307,12 @@ function boundColResolver ($tagger, $flag, $teamid, $gameid) {
 				$query2 = "UPDATE `players` SET `state` = 2 WHERE `player_id` = $tagger";
 				if( $result2 = $mysqli->query($query2) ) {
 					echo "Player $tagger freed from jail"; // Call a query to create an event
+					eventHandler("freed", $gameid, $tagger, $teamid, -1);
 				}
 			} else if ($row[0] == 1) {
 				$query2 = "UPDATE `objects` SET `state` = 0 WHERE `object_id` = $flag ; UPDATE `players` SET `state` = 0 WHERE `player_id` = $tagger";
 				if( $result2 = $mysqli->multi_query($query2) ) {
-					echo "Player $tagger captured the flag"; // Call a query to create an event
+					echo "Player $tagger captured the flag"; 
 					
 					if($teamid == 1){
 						$query3 = "SELECT `score1` from `games` WHERE `game_id = $gameid";
@@ -316,6 +320,9 @@ function boundColResolver ($tagger, $flag, $teamid, $gameid) {
 							while($r = $result3->fetch_row() ){
 								$newScore = $r[0] + 1;
 								$query4 = "UPDATE `games` SET `score1` = $newScore  WHERE `game_id` = $gameid"; //team one scores
+								$mysqli->query($query4);
+								checkWinCond ($gameid, $teamid, $tagger);
+								eventHandler("score1", $gameid, $tagger, $teamid, -1);
 							}
 						}	
 					} else if ($teamid == 2) {
@@ -324,6 +331,9 @@ function boundColResolver ($tagger, $flag, $teamid, $gameid) {
 							while($r = $result3->fetch_row() ){
 								$newScore = $r[0] + 1;
 								$query4 = "UPDATE `games` SET `score2` = $newScore  WHERE `game_id` = $gameid"; //team two scores
+								$mysqli->query($query4);
+								checkWinCond ($gameid, $teamid, $tagger);
+								eventHandler("score2", $gameid, $tagger, $teamid, -1);
 							}
 						}	
 					}
@@ -334,26 +344,89 @@ function boundColResolver ($tagger, $flag, $teamid, $gameid) {
 }
 
 //Whenever score is updated, check win condition.
-//NOT TESTED DUE TO EVENTS BEING UNIMPLEMENTED
-function checkWinCond ($gameid){
+//NOT FULLY TESTED DUE TO EVENTS BEING UNIMPLEMENTED
+function checkWinCond ($gameid, $teamid, $playerid){
 	global $mysqli;
 	$query = "SELECT `score1`, `score2` from `games` where `game_id` = $gameid";
 	if($result = $mysqli->query($query)) {
 		while($row = $result->fetch_row() ) {
 			if($row[0] >= 3) {
 				echo "Team 1 has won!"; //call an event
+				eventHandler("win1", $gameid, $playerid, $teamid, -1);
 			} else if ($row[1] >= 3) {
 				echo "Team 2 has won!"; //call an event
+				eventHandler("win2", $gameid, $playerid, $teamid, -1);
 			}
 		}
 	}
 }
 
 // we need to handle events!
-function eventHandler($event, $gameid, $playerid, $teamid) {
+// Event key
+// 0 = 
+// 1 = team one victory
+// 2 = team two victory
+// 3 = team one scored
+// 4 = team two scored
+// 5 = player freed from jail
+// 6 = played tagged another player
+// 7 = flag picked up
+function eventHandler($event, $param1, $param2, $param3, $param4) {
 	global $mysqli;
-	if ($event == "win1") {
-		$query = "INSERT";
+	while ($mysqli->more_results()) {
+		$mysqli->next_result();
+	}
+	if ($event == "win1") { // $param1 = $gameid, $param2 = $playerid, $param3 = $teamid
+		$query = "INSERT INTO `events` (type, game, player, team) VALUES(1, $param1, $param2, $param3)" ;
+		if ( $result = $mysqli->query($query) ) {
+			
+		} else {
+			echo "$mysqli->error";
+		}
+	} else if ($event == "win2") { // $param1 = $gameid, $param2 = $playerid, $param3 = $teamid
+		$query = "INSERT INTO `events` (type, game, player, team) VALUES(2, $param1, $param2, $param3)" ;
+		if ( $result = $mysqli->query($query) ) {
+			
+		} else {
+			echo "$mysqli->error";
+		}
+	} else if ($event == "score1") { // $param1 = $gameid, $param2 = $playerid, $param3 = $teamid
+		$query = "INSERT INTO `events` (type, game, player, team) VALUES(3, $param1, $param2, $param3)" ;
+		if ( $result = $mysqli->query($query) ) {
+			
+		} else {
+			echo "$mysqli->error";
+		}
+	} else if ($event == "score2") { // $param1 = $gameid, $param2 = $playerid, $param3 = $teamid
+		$query = "INSERT INTO `events` (type, game, player, team) VALUES(4, $param1, $param2, $param3)" ;
+		if ( $result = $mysqli->query($query) ) {
+			
+		} else {
+			echo "$mysqli->error";
+		}
+	} else if ($event == "freed") { // $param1 = $gameid, $param2 = $playerid, $param3 = $teamid
+		$query = "INSERT INTO `events` (type, game, player, team) VALUES(5, $param1, $param2, $param3)" ;
+		if ( $result = $mysqli->query($query) ) {
+			
+		} else {
+			echo "$mysqli->error";
+		}
+	} else if ($event == "tag") { // $param1 = $gameid, $param2 = $playerid, $param3 = $teamid, $param4 = target_player
+		$query = "INSERT INTO `events` (type, game, player, team, target_player) VALUES(6, $param1, $param2, $param3, $param4)" ; // how to pass 2 player names?
+		if ( $result = $mysqli->query($query) ) {
+				
+		} else {
+			echo "$mysqli->error";
+		}
+	} else if ($event == "pickup") { // $param1 = $gameid, $param2 = $playerid, $param3 = $teamid
+		$query = "INSERT INTO `events` (type, game, player, team) VALUES('7', $param1, $param2, $param3)" ;
+		if ( $result = $mysqli->query($query) ) {
+			
+		} else {
+			echo "$mysqli->error";
+		}
+		
+		
 	}
 }
 
