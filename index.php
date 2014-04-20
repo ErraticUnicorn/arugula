@@ -42,7 +42,6 @@ function getAllGames() {
 	echo "]";
 }
 
-
 // getGame function 
 // given a game ID, 
 // return all columns for all games from the table that match that id (id is unique, always returns <= one row) 
@@ -61,6 +60,7 @@ function getGame($gameID) {
 	}
 	echo "]";
 }
+
 // createGame function
 // inserts/creates a game in the game table with the name value initialized to the name parameter passed
 function createGame($name) {
@@ -71,6 +71,7 @@ function createGame($name) {
 		$result->free();
 	}
 } 
+
 //getPlayers function
 //returns all players who are members of the given team as a json array
 function getPlayers($teamid) {
@@ -131,39 +132,35 @@ function gpsUpdate($playerid, $lat, $long) {
 	// call a query using the passed player's player id that fetches their team id, and bind that team id to a variable
 	$teamid = getTeam($playerid);
 	// Then, call a query using that team id to get all players on the enemy team
-	// Run through the array of all players you received and compare lat + long for collisions
-	checkEnemyCollisions($teamid, $lat, $long);
-	// Then, call a query using that passed player's player id that fetches the associated game id, and bind that game id to a variable
+
+	// Then, call a query using the passed player's player id that fetches the associated game id, and bind that game id to a variable
 	$gameid = getGameID($playerid);
-	// Then call a query using that game id to get all flags bound to that game (in the object_junction).
-	//getFlagID returns an array containing both flag objects in the game. We care about collisions with the enemy flag.
-	$flags = getFlagID($gameid);
-	//pull team info from $flags
-	/*
-	if ($flags[2] == $teamid) {
-		$flagID = $flag[0];
-	} else if ($flags[7] == $teamid) {
-		$flagID = $flag[5];
-	}
-	echo $flagID;
-	*/
-	//That means we want to get the flag that belongs to the enemy team, and ignore the other one
-	// $query = "SELECT `team` from `objects` WHERE `object_id` = $ "
+	// Then call a query using that game id to get the enemy flag bound to that game (flags = one to many relation, handled in objects table).
+	$alliedFlag = getAlliedFlagID($gameid, $teamid);
 	
-	// Run through the array of all flags you received and compare lat + long for collisions
-	// checkFlagCollision not implemented
+	$enemyFlag = getEnemyFlagID($gameid, $teamid);
+	
+	// Check enemy flag's lat/long for collision 
+	$flagCol = checkFlagCollision($enemyFlag, $lat, $long);
+	if($flagCol == true) {
+		pickupFlag($enemyFlag, $playerid);
+	}
+	// Check for collisions with enemy players
+	$playerCol = checkEnemyCollisions($teamid, $lat, $long);
+	if ($playerCol != -1) {
+		tag($playerid, $playerCol, $alliedFlag);
+	}
 }
 
-//HELPER FUNCTIONS
+//HELPER FUNCTIONS FOR GPSUPDATE
 
 function updateLocation($playerid, $lat, $long){
 	global $mysqli;
 	$query = "UPDATE `players` SET `lat` = $lat, `long` = $long WHERE `player_id` = $playerid " ;
-	if($result = $mysqli->query($query)){
+	if($result = $mysqli->query($query)) {
 		echo "You updated '$playerid' ." ;
 	}
 }
-
 
 function getTeam($playerid){
 	global $mysqli;
@@ -176,10 +173,9 @@ function getTeam($playerid){
 	}
 }
 
-
 function getGameID($playerid){
 	global $mysqli;
-	$query = "SELECT  `game_id` FROM  `player_junction` WHERE  `player_id` =$playerid";
+	$query = "SELECT  `game_id` FROM  `player_junction` WHERE  `player_id` = $playerid";
 	if ($result = $mysqli->query($query)) { 
 	//This is ok because we should only get ONE ROW for our result
 		while ($row = $result->fetch_row() ) {
@@ -188,46 +184,62 @@ function getGameID($playerid){
 	}
 }
 
-function getFlagID($gameid){
+function getAlliedFlagID($gameid, $teamid){
 	global $mysqli;
-	$query = "SELECT `object_id` FROM `object_junction` WHERE `game_id` = $gameid";
-	if ($result = $mysqli->query($query)) { 
-	//This is ok because we should only get ONE ROW for our result
-		while ($row = $result->fetch_assoc() ) {
-			return $row;
+	$query = "SELECT `object_id` FROM `objects` WHERE `game_id` = $gameid AND `team` = $teamid";
+	if ($result = $mysqli->query($query)) {
+		//returns an array, not a row
+		while ($row = $result->fetch_row() ) {
+			return $row[0];
 		}
 	}
 }
 
-// Implement collision handler 4 this
+function getEnemyFlagID($gameid, $teamid){
+	global $mysqli;
+	$query = "SELECT `object_id` FROM `objects` WHERE `game_id` = $gameid AND `team` != $teamid";
+	if ($result = $mysqli->query($query)) { 
+	//returns an array, not a row
+		while ($row = $result->fetch_row() ) {
+			return $row[0];
+		}
+	}
+}
+
+
+// checkEnemyCollisions checks to see if you collide with an enemy, and returns 
+// the player_id of the first enemy you collide with, or -1 if you collide with no enemies
 function checkEnemyCollisions($teamid, $lat, $long){
 	global $mysqli;
 	$query = "SELECT `player_id`, `lat`, `long` FROM  `players` WHERE  `team` != $teamid";
-	
 	if ($result = $mysqli->query($query)) {
 		/* fetch associative array */
 		while ($row = $result->fetch_row() ) {
 			if($row[1] == $lat && $row[2] == $long) {
-				echo "Collision with $row[0] \n"; //COLLISION HANDLER HERE
+				//echo "DEBUG: PLAYER COLLISION WITH PLAYER $row[0] \n";
+				return $row[0]; // return playerid of whomever you collided with
 			} else {
-				// NO COLLISION
+				//echo "DEBUG: NO PLAYER COLLISION \n";
+				return -1;// NO COLLISION
 			}
-			
 		}
 		$result->free();
 	}
 }
 
-//David assures me this works (NO COLLISION HANDLER YET)
+// checkFlagCollisions checks to see if you collide with a flag, and returns
+// true if you do
 function checkFlagCollision($flagID, $lat, $long){
 	global $mysqli;
 	$query = "SELECT `object_id`, `lat`, `long` FROM `objects` WHERE `object_id` = $flagID";
-	if($result = $mysqli->query($query)){
-		while($row = $result->fetch_row()){
+	if($result = $mysqli->query($query) ) {
+		while($row = $result->fetch_row() ) {
 			if($row[1] == $lat && $row[2] == $long){
-				echo "Collision!"; //COLLISION HANDLER HERE
+				//echo "DEBUG: FLAG COLLISION WITH FLAG $row[0] \n";
+				return true; //true = COLLISION, CALL COLLISION HANDLER
 			} else {
-				echo "No Collision";//NO COLLISION
+				//echo "DEBUG: NO FLAG COLLISION \n";
+				return false; // false = no collision, do nothing
 			}
 		
 		}
@@ -235,41 +247,136 @@ function checkFlagCollision($flagID, $lat, $long){
 	}
 }
 
-// aka Flag-Player collision
-function flagPickup ($objectid, $playerid) {
+// pickupFlag function
+// aka player-flag collision handler
+// check the Flag's state. If 0 (free), change to 1 (carried) and change  player state to indicate they are carrying flag (1)
+
+
+function pickupFlag ($objectid, $playerid) {
+//echo "DEBUG: pickupFlag called! ";
 global $mysqli;
-$query = "UPDATE `objects` SET `type` = $playerid where `object_id` = $objectid";
+$query = "SELECT `state` FROM `objects` WHERE `object_id` = $objectid ";
 	if($result = $mysqli->query($query)) {
-		echo "Updated flag to be bound to $playerid";
+		while($row = $result->fetch_row() ) {
+			if ($row[0] == 0) {
+				$query2 = "UPDATE `objects` SET `state` = 1 WHERE `object_id` = $objectid ; UPDATE `players` SET `state` = 1 WHERE `player_id` = $playerid";
+				if( $result2 = $mysqli->multi_query($query2) ) {
+					//echo "Flag picked up!"; // Call a query to create an event
+				}
+			}
+		}
 	}
 }
 
-// aka player-player collision, when one player is holding the flag
-function flagDrop ($objectid, $playerid) {
-global $mysqli;
-$query = "UPDATE `objects` SET `type` = -1 WHERE `object_id` = $objectid";
+
+// tag function
+// aka player-player collision handler
+// check the taggee's state - if 1 (carrying flag), change it to 2, and change the flag state to 0 (free)
+// check the player's state. If 1 (carrying flag), update the player's state to 2 (tagged), and update the flag's state to 0.
+function tag ($tagger, $taggee, $flag) {
+	global $mysqli;
+	$query = "SELECT `state` FROM `players` WHERE `player_id` = $taggee ";
+	if($result = $mysqli->query($query)) {
+		while($row = $result->fetch_row() ) {
+			if ($row[0] == 1) {
+				//echo "DEBUG: flag = $flag, tagger = $tagger, taggee = $taggee \n";
+				$query2 = "UPDATE `objects` SET `state` = 0 WHERE `object_id` = $flag ; UPDATE `players` SET `state` = 2 WHERE `player_id` = $taggee";
+				if( $result2 = $mysqli->multi_query($query2) ) {
+					//echo "Player $taggee tagged by $tagger!, flag $flag dropped!"; // Call a query to create an event
+				}
+			}
+		}
+	}
+}
+
+// boundColResolver function
+// resolves both player-bound collisions (unjailing and flag capturing)
+// check the player's state. If 2 (tagged), update the player's state to 0.
+// else if player's state = 1, update the player's state to 0 and score a point (if that team's flag is uncarried?)
+
+//THIS FUNCTION NOT TESTED DUE TO BOUNDS BEING UNIMPLEMENTED
+function boundColResolver ($tagger, $flag, $teamid, $gameid) {
+	global $mysqli;
+	$query = "SELECT `state` FROM `players` WHERE `player_id` = $tagger ";
+	if($result = $mysqli->query($query)) {
+		while($row = $result->fetch_row() ) {
+			if ($row[0] == 2) {
+				$query2 = "UPDATE `players` SET `state` = 2 WHERE `player_id` = $tagger";
+				if( $result2 = $mysqli->query($query2) ) {
+					echo "Player $tagger freed from jail"; // Call a query to create an event
+				}
+			} else if ($row[0] == 1) {
+				$query2 = "UPDATE `objects` SET `state` = 0 WHERE `object_id` = $flag ; UPDATE `players` SET `state` = 0 WHERE `player_id` = $tagger";
+				if( $result2 = $mysqli->multi_query($query2) ) {
+					echo "Player $tagger captured the flag"; // Call a query to create an event
+					
+					if($teamid == 1){
+						$query3 = "SELECT `score1` from `games` WHERE `game_id = $gameid";
+						if($result3 = $mysqli->query($query3)){
+							while($r = $result3->fetch_row() ){
+								$newScore = $r[0] + 1;
+								$query4 = "UPDATE `games` SET `score1` = $newScore  WHERE `game_id` = $gameid"; //team one scores
+							}
+						}	
+					} else if ($teamid == 2) {
+						$query3 = "SELECT `score2` from `games` WHERE `game_id = $gameid";
+						if($result3 = $mysqli->query($query3)){
+							while($r = $result3->fetch_row() ){
+								$newScore = $r[0] + 1;
+								$query4 = "UPDATE `games` SET `score2` = $newScore  WHERE `game_id` = $gameid"; //team two scores
+							}
+						}	
+					}
+				}
+			}
+		}
+	} 	
+}
+
+//Whenever score is updated, check win condition.
+//NOT TESTED DUE TO EVENTS BEING UNIMPLEMENTED
+function checkWinCond ($gameid){
+	global $mysqli;
+	$query = "SELECT `score1`, `score2` from `games` where `game_id` = $gameid";
+	if($result = $mysqli->query($query)) {
+		while($row = $result->fetch_row() ) {
+			if($row[0] >= 3) {
+				echo "Team 1 has won!"; //call an event
+			} else if ($row[1] >= 3) {
+				echo "Team 2 has won!"; //call an event
+			}
+		}
+	}
+}
+
+// we need to handle events!
+function eventHandler($event, $gameid, $playerid, $teamid) {
+	global $mysqli;
+	if ($event == "win1") {
+		$query = "INSERT";
+	}
+}
+
+//and an event getter!
+function getEventFeed($gameid) {
+	global $mysqli;
+	$query = "SELECT * FROM `events` where `game` = $gameid";
+	echo "[";
 	if ($result = $mysqli->query($query)) {
-		echo "Updated flag to be free ";
+		/* fetch associative array */
+		$numRow = $result->num_rows;
+		$i = 0;
+		while ($row = $result->fetch_assoc()) {
+			echo json_encode($row);
+			if( $i < ($numRow - 1) ){
+				echo ",";
+				$i++;
+			}
+		}
+		/* free result set */
+		$result->free();
 	}
-}
-
-// resolving being 'jailed' after collisions
-function boundTag() {
-global $mysqli;
-//$query = "
-//update player table 2 have a column 4 state
-}
-
-// aka player-bound collision
-function flagCapture($objectid, $playerid) {
-
-function enemyCollisionHandler(){
-//Check to see if enemy is carrying the flag. If they are carrying the flag, the flag is dropped (flag and player's state get changed)
-//Otherwise no effect
-}
-
-Function flagCollisionHandler(){
-//Flag collision needs to update the flag's state to be 'picked up' and the player who picked it up to be 'carrying'
+	echo "]";
 }
 
 /*Explanation of States for Flags and Players
@@ -278,19 +385,11 @@ Flags:
 1 - Carried - The flag has been picked up and cannot be interacted with directly
 
 Players:
-0 - Default - Player has normal behavior when colliding.
+0 - Default - Player has normal behaviour when colliding.
 1 - Carrying - The player is carrying the flag. If collided with, the flag will be dropped
 2 - Jailed - The player must return to their bounds before they can collide with others.
-
-
 */
 
-global $mysqli;
-$query = "UPDATE `objects` SET `type` = -1 WHERE `object_id` = $objectid";
-	if ($result = $mysqli->query($query)) {
-		echo "$playerid captured the enemy team's flag!";
-	}
-}
 
 Flight::route('/@type(/@param1(/@param2(/@param3)))', function($type, $param1, $param2, $param3){
     if ($type == "getgame" && $param1 != null) {
@@ -307,7 +406,9 @@ Flight::route('/@type(/@param1(/@param2(/@param3)))', function($type, $param1, $
 		makeFlag($param1, $param2, $param3);
 	} else if ($type == "getflag" && $param1 != null) {
 		getFlag($param1);
-	} 	
+	} else if ($type == "eventfeed" && $param1 != null) {
+		getEventFeed($param1);
+	}
 });
 
 Flight::start();
