@@ -463,6 +463,48 @@ Players:
 2 - Jailed - The player must return to their bounds before they can collide with others.
 */
 
+//betterCreateGame()
+//NEEDS to implement a way to generate random lat/long for flags, given bounds. 
+function createBetterGame($name, $bounds) {
+	global $mysqli;
+	$query = "INSERT INTO `games` (name) VALUES($name)" ;
+	if ($result = $mysqli->query($query)) {
+		//echo "You inserted $name.";
+		$result->free();
+	}
+	$query = "SELECT `game_id` FROM `games` WHERE `name` = $name"; //names are unique (now)!
+	if ($result = $mysqli->query($query)) {
+		while($row = $result->fetch_row() ) {
+			//CODE HERE TO CREATE RANDOM LAT/LONGS WITHIN BOUNDS FOR FLAGS
+	
+			//$query2 = "INSERT INTO `objects` (game_id, state, team, lat, long) VALUES($row[0], 0, 1, 1, 1 )" ; //instantiate team one's flag
+			//$query3 = "INSERT INTO `bounds` (game_id, team_id, bounds) VALUES ($row[0], 1, $bounds)" l // instantiate team one's bounds (SOMETHING LIKE THIS, PROBABLY A FOREACH LOOP)
+			// if($result3 = $mysqli->query($query3){$result3->free();}
+			if($result2 = $mysqli->query($query2)) {
+				$result2->free();
+			}
+			//$query2 = "INSERT INTO `objects` (game_id, state, team, lat, long) VALUES($row[0], 0, 2, 1, 1 )" ; //instantiate team two's flag
+			//$query3 = "INSERT INTO `bounds` (game_id, team_id, bounds) VALUES ($row[0], 2, $bounds)" l // instantiate team two's bounds (SOMETHING LIKE THIS, PROBABLY A FOREACH LOOP)
+			// if($result3 = $mysqli->query($query3){$result3->free();}
+			if($result2 = $mysqli->query($query2)) {
+				$result2->free();
+			}
+		}
+		$result->free();
+	}
+	
+}
+
+function addPlayer($team) {
+	global $mysqli;
+	$query = "INSERT INTO `players` (team) VALUES ($team)";
+	if ($result = $mysqli->query($query)) {
+		$result->free();
+	}
+}
+//addPlayer()
+
+
 
 Flight::route('/@type(/@param1(/@param2(/@param3)))', function($type, $param1, $param2, $param3){
     if ($type == "getgame" && $param1 != null) {
