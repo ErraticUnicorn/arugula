@@ -2,7 +2,11 @@ package edu.virginia.cs.plato.virtualctf;
 
 import android.app.ActionBar;
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.app.Dialog;
+import android.app.DialogFragment;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.location.Location;
 import android.location.LocationListener;
@@ -20,13 +24,27 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import com.google.android.gms.maps.CameraUpdateFactory;
+import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.MapFragment;
+import com.google.android.gms.maps.MapsInitializer;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+
+import edu.virginia.cs.plato.virtualctf.util.HTTPManager;
+import edu.virginia.cs.plato.virtualctf.util.IntCallback;
+import edu.virginia.cs.plato.virtualctf.util.JsonCallback;
 
 public class MapActivity extends FragmentActivity implements
 NavigationDrawerFragment.NavigationDrawerCallbacks {
 
-	private static final double TOLERANCE = 5;
+	private static final long TOLERANCE = 1000;
 
+	private GoogleMap map;
 	/**
 	 * Fragment managing the behaviors, interactions and presentation of the
 	 * navigation drawer.
@@ -57,22 +75,13 @@ NavigationDrawerFragment.NavigationDrawerCallbacks {
 		// Define a listener that responds to location updates
 		LocationListener locationListener = new LocationListener() {
 
-			private LatLng last = null;
-
 			public void onLocationChanged(Location location) {
-				Log.e("VirtualCTF", "Now at point " + last.latitude + ", " + last.longitude);
 
 				// Called when a new location is found by the network location provider.
 				LatLng p = new LatLng(location.getLatitude(), location.getLongitude());
+				Log.d("CTF", "GPS have!");
 
-				double xdist = p.latitude - last.latitude;
-				double ydist = p.longitude - last.longitude;
-
-				if(last == null || xdist * xdist + ydist * ydist > TOLERANCE) {
-					last = p;
-
-					Log.e("VirtualCTF", "Now at point " + last.latitude + ", " + last.longitude);
-				}
+				onLocChange(p);
 
 			}
 
@@ -84,7 +93,28 @@ NavigationDrawerFragment.NavigationDrawerCallbacks {
 		};
 
 		// Register the listener with the Location Manager to receive location updates
-		locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0l, 0f, locationListener);
+		locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, TOLERANCE, 0f, locationListener);
+		Log.d("CTF", "Loc have!");
+
+	}
+
+	protected void onStart() {
+		super.onStart();
+
+		MapsInitializer.initialize(this);
+
+		getFragmentManager().executePendingTransactions();
+		onMapLoad();
+	}
+
+	public void onMapLoad() {
+
+		// Get a handle to the Map Fragment
+		map = ((MapFragment) getFragmentManager()
+				.findFragmentById(R.id.map))
+				.getMap(); 
+
+		map.animateCamera(CameraUpdateFactory.zoomBy(21));
 	}
 
 	@Override
@@ -199,4 +229,170 @@ NavigationDrawerFragment.NavigationDrawerCallbacks {
 		startActivity(Intent.createChooser(shareIntent, "Share your game"));
 	}
 
+	/*
+	 * 1: T1 wins
+	 * 2: T2 wins
+	 * 3: T1 scores
+	 * 4: T2 scores
+	 * 5: Freed
+	 * 6: You tagged
+	 * 7: Pick flag
+	 */
+
+	private int getId(int res) {
+		switch(res) {
+		case 1:
+			break;
+		case 2:
+			break;
+		case 3:
+			break;
+		case 4:
+			break;
+		case 5:
+			return R.string.free;
+		case 6:
+			return R.string.tagged_other;
+		case 7:
+			return R.string.flag_get;
+		}
+
+		return -1;
+	}
+
+	public void onLocChange(final LatLng p) {
+
+		Log.d("VirtualCTF", "Now at point " + p.latitude + ", " + p.longitude);
+
+		map.animateCamera(CameraUpdateFactory.newLatLng(p));
+
+		HTTPManager.postGPS(new IntCallback() {
+
+			@Override
+			public void call(int param) {
+				// TODO Auto-generated method stub
+//				final int id = getId(param);
+//
+//				if(id != -1) {
+//					PopUp pop = new PopUp() {
+//						protected int getMsg() {
+//							return id;
+//						}
+//					};
+//
+//					pop.show(getFragmentManager(), "Notification");
+//				}
+				
+
+			}
+
+		}, Session.getInstance().getPlayerId(), p.latitude, p.longitude);
+
+		show();
+	}
+
+	public void show() {
+		map.clear();
+
+		final int team = Session.getInstance().getTeamId();
+		final int game = Session.getInstance().getGameId();
+
+		HTTPManager.getAllies(new JsonCallback() {
+
+			@Override
+			public void call(JsonArray param) {
+				// TODO Auto-generated method stub
+
+				for(JsonElement p : param) {
+					JsonObject ally = p.getAsJsonObject();
+
+					Log.d("CTFs","Allies!!!");
+					
+					map.addMarker(new MarkerOptions()
+					.icon(BitmapDescriptorFactory.fromResource(team == 1 ? R.drawable.blood : R.drawable.crip))
+					.position(new LatLng(ally.get("lat").getAsDouble(), ally.get("long").getAsDouble())));
+				}
+
+			}
+
+		}, game, team);
+
+		HTTPManager.getEnemies(new JsonCallback() {
+
+			@Override
+			public void call(JsonArray param) {
+				// TODO Auto-generated method stub
+
+				for(JsonElement p : param) {
+					JsonObject ally = p.getAsJsonObject();
+
+					map.addMarker(new MarkerOptions()
+					.icon(BitmapDescriptorFactory.fromResource(team == 1 ? R.drawable.crip : R.drawable.blood))
+					.position(new LatLng(ally.get("lat").getAsDouble(), ally.get("long").getAsDouble())));
+				}
+
+			}
+
+		}, game, team);
+
+		HTTPManager.getAlliedFlags(new JsonCallback() {
+
+			@Override
+			public void call(JsonArray param) {
+				// TODO Auto-generated method stub
+
+				for(JsonElement p : param) {
+					JsonObject ally = p.getAsJsonObject();
+
+					Log.d("CTFs","AlliesFlags!!!");
+					
+					map.addMarker(new MarkerOptions()
+					.icon(BitmapDescriptorFactory.fromResource(team == 1 ? R.drawable.redflag : R.drawable.blueflag))
+					.position(new LatLng(ally.get("lat").getAsDouble(), ally.get("long").getAsDouble())));
+				}
+
+			}
+
+		}, game, team);
+
+		HTTPManager.getEnemyFlags(new JsonCallback() {
+
+			@Override
+			public void call(JsonArray param) {
+				// TODO Auto-generated method stub
+
+				for(JsonElement p : param) {
+					JsonObject ally = p.getAsJsonObject();
+
+					map.addMarker(new MarkerOptions()
+					.icon(BitmapDescriptorFactory.fromResource(team == 1 ? R.drawable.blueflag : R.drawable.redflag))
+					.position(new LatLng(ally.get("lat").getAsDouble(), ally.get("long").getAsDouble())));
+				}
+
+			}
+
+		}, game, team);
+
+	} 
+
+	public static class PopUp extends DialogFragment {
+
+		protected int getMsg() {
+			return -1;
+		}
+
+		@Override
+		public Dialog onCreateDialog(Bundle savedInstanceState) {
+			// Use the Builder class for convenient dialog construction
+			AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+			builder.setMessage(getMsg())
+			.setPositiveButton(R.string.event_select, new DialogInterface.OnClickListener() {
+				public void onClick(DialogInterface dialog, int id) {
+					// FIRE ZE MISSILES!
+				}
+			});
+			// Create the AlertDialog object and return it
+			return builder.create();
+		}
+	}
 }

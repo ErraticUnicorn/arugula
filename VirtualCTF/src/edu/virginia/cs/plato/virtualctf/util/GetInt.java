@@ -13,20 +13,18 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import android.os.AsyncTask;
 import android.util.Log;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonParser;
 
+public class GetInt extends AsyncTask<String, String, Integer> {
 
-public class GetJson extends AsyncTask<String, String, JsonArray> {
-
-	private JsonCallback callback;
+	private IntCallback callback;
 	
-	public GetJson(JsonCallback callback_) {
+	public GetInt(IntCallback callback_) {
 		callback = callback_;
 	}
 	
 	public String getJSONfromURL(String url) {
 
+//		Log.d("Call", url);
 		// initialize
 		InputStream is = null;
 		String result = "";
@@ -62,15 +60,15 @@ public class GetJson extends AsyncTask<String, String, JsonArray> {
 	}
 
 	@Override
-	protected JsonArray doInBackground(String... params) {
-		JsonArray res = new JsonArray();
+	protected Integer doInBackground(String... params) {
+		int res = -1;
 		String url = params[0];
 		try {
-			Log.d("URL", url);
 			String webJSON = getJSONfromURL(url);
-			Log.d("JSON", webJSON);
-			JsonParser parser = new JsonParser();
-			res = parser.parse(webJSON).getAsJsonArray();
+//			Log.d("JSON", webJSON);
+			
+			res = Integer.parseInt(webJSON.substring(1, webJSON.length()-2));
+//			Log.d("JSON", res + "?");
 		} catch (Exception e) {
 			Log.e("VirtualCTF", "JSONPARSE:" + e.toString());
 		}
@@ -79,7 +77,7 @@ public class GetJson extends AsyncTask<String, String, JsonArray> {
 	}
 	
 	@Override
-	protected void onPostExecute(JsonArray result) {
+	protected void onPostExecute(Integer result) {
 		callback.call(result);
 	}
 

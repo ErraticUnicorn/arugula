@@ -19,11 +19,11 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.GoogleMap.OnMapClickListener;
 import com.google.android.gms.maps.MapFragment;
 import com.google.android.gms.maps.MapsInitializer;
-import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.PolygonOptions;
 import com.google.gson.JsonArray;
 
+import edu.virginia.cs.plato.virtualctf.util.GrahamScan;
 import edu.virginia.cs.plato.virtualctf.util.HTTPManager;
 import edu.virginia.cs.plato.virtualctf.util.JsonCallback;
 
@@ -32,7 +32,6 @@ public class NewGameBoundsActivity extends FragmentActivity {
 	private static GoogleMap map;
 
 	private String name;
-	private String pw;
 
 	private List<LatLng> teamOne;
 	private List<LatLng> teamTwo;
@@ -57,7 +56,7 @@ public class NewGameBoundsActivity extends FragmentActivity {
 
 		teamOne = new ArrayList<LatLng>();
 		teamTwo = new ArrayList<LatLng>();
-		
+
 	}
 
 	protected void onStart() {
@@ -120,20 +119,43 @@ public class NewGameBoundsActivity extends FragmentActivity {
 
 				@Override
 				public void onMapClick(LatLng p) {
+					map.clear();
+
 					if(mode == 1) {
 						teamTwo.add(p);
-						map.addMarker(new MarkerOptions()
-						.position(p)
-						.title("Team 2") 
-						.icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE)));
 
+						//						if(teamTwo.size() > 3) {
+						//							teamTwo = GrahamScan.graham(teamTwo);
+						//						}
+						//						map.addMarker(new MarkerOptions()
+						//						.position(p)
+						//						.title("Team 2") 
+						//						.icon(BitmapDescriptorFact
 					} 
 					else if(mode == 0) {
 						teamOne.add(p);
-						map.addMarker(new MarkerOptions()
-						.position(p)
-						.title("Team 1")
-						.icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)));
+
+						//						if(teamTwo.size() > 3) {
+						//							teamOne = GrahamScan.graham(teamOne);
+						//						}
+
+						//						map.addMarker(new MarkerOptions()
+						//						.position(p)
+						//						.title("Team 1")
+						//						.icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)));
+
+					}
+ 
+					if(teamTwo.size() > 0) {
+						map.addPolygon(new PolygonOptions() 
+						.addAll(teamTwo)
+						.fillColor(0x990000ff));
+					}
+
+					if(teamOne.size() > 0) {
+						map.addPolygon(new PolygonOptions()
+						.addAll(teamOne)
+						.fillColor(0x99ff0000));
 					}
 				}
 
@@ -151,7 +173,7 @@ public class NewGameBoundsActivity extends FragmentActivity {
 					goToMain();
 				}
 
-			}, name, pw);
+			}, name, teamOne, teamTwo);
 		}
 		else if(mode == 0) {
 			TextView title = (TextView) findViewById(R.id.bounds_title);

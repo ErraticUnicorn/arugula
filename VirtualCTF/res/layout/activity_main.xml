@@ -16,23 +16,21 @@
         android:layout_centerHorizontal="true"
         android:text="@string/title"
         android:textAppearance="?android:attr/textAppearanceLarge" />
-    
+
     <ScrollView
         android:id="@+id/scrollView1"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_below="@+id/button1"
         android:layout_alignParentBottom="true"
         android:layout_alignParentLeft="true"
-        android:layout_alignParentRight="true" >
+        android:layout_alignParentRight="true"
+        android:layout_below="@+id/teamPick" >
 
         <LinearLayout
-        	android:id="@+id/gameList"
+            android:id="@+id/gameList"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-        	android:layout_centerHorizontal="true"
             android:orientation="vertical" >
-            
         </LinearLayout>
     </ScrollView>
 
@@ -44,5 +42,26 @@
         android:layout_centerHorizontal="true"
         android:onClick="onCreateNewGame"
         android:text="@string/new_game" />
+
+    <RadioGroup
+        android:id="@+id/teamPick"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/button1"
+        android:layout_centerHorizontal="true"
+        android:orientation="horizontal" >
+
+        <RadioButton
+            android:id="@+id/radioButton1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/team1" />
+
+        <RadioButton
+            android:id="@+id/radioButton2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/team2" />
+    </RadioGroup>
 
 </RelativeLayout>

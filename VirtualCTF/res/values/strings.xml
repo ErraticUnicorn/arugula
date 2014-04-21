@@ -25,5 +25,15 @@
     <string name="twit">Tweet about your life!</string>
     <string name="building">Enter a building to find its coordinates</string>
     <string name="building_button">Send</string>
+    <string name="team1">Team 1</string>
+    <string name="team2">Team 2</string>
+    
+    <string name="tagged_other">You tagged someone!</string>
+    <string name="tagged_you">You got tagged! Return to your base to be untagged</string>
+    <string name="free">You\'re free! Go get \'em, tiger!</string>
+    <string name="flag_get">You grabbed a flag! Bring it back to your base to profit</string>
+    <string name="flag_cap">You captured a flag. Good for you!</string>
+    
+    <string name="event_select">OK</string>
 
 </resources>

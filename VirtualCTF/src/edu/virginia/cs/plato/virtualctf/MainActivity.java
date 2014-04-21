@@ -4,15 +4,18 @@ import android.app.ActionBar.LayoutParams;
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Menu;
 import android.view.View;
 import android.widget.Button;
 import android.widget.LinearLayout;
+import android.widget.RadioGroup;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 
 import edu.virginia.cs.plato.virtualctf.util.HTTPManager;
+import edu.virginia.cs.plato.virtualctf.util.IntCallback;
 import edu.virginia.cs.plato.virtualctf.util.JsonCallback;
 
 public class MainActivity extends Activity {
@@ -69,9 +72,25 @@ public class MainActivity extends Activity {
 		startActivity(i);
 	}
 
-	public void onJoinGame() {
+	public void onJoinGame(int gameId) {
 		Intent i = new Intent(getApplicationContext(), MapActivity.class); 
 		startActivity(i);
+	}
+	
+	private int getTeam() {
+		RadioGroup g = (RadioGroup) findViewById(R.id.teamPick);
+		
+		int selId = g.getCheckedRadioButtonId();
+
+		if(selId == R.id.radioButton1) {
+			return 1;
+		}
+		else if(selId == R.id.radioButton2) {
+			return 2;
+		}
+		else {
+			return -1;
+		}
 	}
 
 	public void makeButton(final Game g) {
@@ -83,17 +102,31 @@ public class MainActivity extends Activity {
 		ll.addView(btn, lp);
 		btn.setOnClickListener(new View.OnClickListener() {
 			public void onClick(View view) {
+				
+				final int team = getTeam();
+				
+				if(team == -1) {
+					//TODO No team selected
+					return;
+				}
 				//Calls join method
-				HTTPManager.joinGame(new JsonCallback() {
+				HTTPManager.joinGame(new IntCallback() {
 
 					@Override
-					public void call(JsonArray param) {
+					public void call(int param) {
 						
-						onJoinGame();
+						Log.d("Love", "Pears!!!");
+						
+						Session.getInstance().setPlayerId(param); 
+
+						Session.getInstance().setTeamId(team);
+						Session.getInstance().setGameId(g.getId());
+						
+						onJoinGame(g.getId());
 						
 					}
 					
-				}, g.getId(), 3);
+				}, g.getId(), team);
 			}
 		});
 	}
