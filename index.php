@@ -63,14 +63,15 @@ function getGame($gameID) {
 
 // createGame function
 // inserts/creates a game in the game table with the name value initialized to the name parameter passed
+/*
 function createGame($name) {
 	global $mysqli;
-	$query = "INSERT INTO `games` (name) VALUES($name)" ;
+	$query = "INSERT INTO games (`name`) VALUES('$name')" ;
 	if ($result = $mysqli->query($query)) {
 		echo "You inserted $name.";
 		$result->free();
 	}
-} 
+} */
 
 //getPlayers function
 //returns all players who are members of the given team as a json array
@@ -158,7 +159,7 @@ function updateLocation($playerid, $lat, $long){
 	global $mysqli;
 	$query = "UPDATE `players` SET `lat` = $lat, `long` = $long WHERE `player_id` = $playerid " ;
 	if($result = $mysqli->query($query)) {
-		echo "You updated '$playerid' ." ;
+		//echo "You updated '$playerid' ." ;
 	}
 }
 
@@ -261,7 +262,7 @@ $query = "SELECT `state` FROM `objects` WHERE `object_id` = $objectid ";
 				$query2 = "UPDATE `objects` SET `state` = 1 WHERE `object_id` = $objectid ; UPDATE `players` SET `state` = 1 WHERE `player_id` = $playerid";
 				if( $result2 = $mysqli->multi_query($query2) ) {
 					//echo "Flag picked up!"; // Call a query to create an event
-					echo "DEBUG: Event Handler Called: Parameters: $gameid $playerid $teamid \n";
+					//echo "DEBUG: Event Handler Called: Parameters: $gameid $playerid $teamid \n";
 					eventHandler("pickup", $gameid, $playerid, $teamid, -1);
 				}
 			}
@@ -379,50 +380,53 @@ function eventHandler($event, $param1, $param2, $param3, $param4) {
 	}
 	if ($event == "win1") { // $param1 = $gameid, $param2 = $playerid, $param3 = $teamid
 		$query = "INSERT INTO `events` (type, game, player, team) VALUES(1, $param1, $param2, $param3)" ;
+		
 		if ( $result = $mysqli->query($query) ) {
-			
+			echo "1";
 		} else {
 			echo "$mysqli->error";
 		}
 	} else if ($event == "win2") { // $param1 = $gameid, $param2 = $playerid, $param3 = $teamid
 		$query = "INSERT INTO `events` (type, game, player, team) VALUES(2, $param1, $param2, $param3)" ;
+		
 		if ( $result = $mysqli->query($query) ) {
-			
+			echo "2";
 		} else {
 			echo "$mysqli->error";
 		}
 	} else if ($event == "score1") { // $param1 = $gameid, $param2 = $playerid, $param3 = $teamid
 		$query = "INSERT INTO `events` (type, game, player, team) VALUES(3, $param1, $param2, $param3)" ;
+		;
 		if ( $result = $mysqli->query($query) ) {
-			
+			echo "3";
 		} else {
 			echo "$mysqli->error";
 		}
 	} else if ($event == "score2") { // $param1 = $gameid, $param2 = $playerid, $param3 = $teamid
 		$query = "INSERT INTO `events` (type, game, player, team) VALUES(4, $param1, $param2, $param3)" ;
 		if ( $result = $mysqli->query($query) ) {
-			
+			echo "4";
 		} else {
 			echo "$mysqli->error";
 		}
 	} else if ($event == "freed") { // $param1 = $gameid, $param2 = $playerid, $param3 = $teamid
 		$query = "INSERT INTO `events` (type, game, player, team) VALUES(5, $param1, $param2, $param3)" ;
 		if ( $result = $mysqli->query($query) ) {
-			
+			echo "5";
 		} else {
 			echo "$mysqli->error";
 		}
 	} else if ($event == "tag") { // $param1 = $gameid, $param2 = $playerid, $param3 = $teamid, $param4 = target_player
 		$query = "INSERT INTO `events` (type, game, player, team, target_player) VALUES(6, $param1, $param2, $param3, $param4)" ; // how to pass 2 player names?
 		if ( $result = $mysqli->query($query) ) {
-				
+				echo "6";
 		} else {
 			echo "$mysqli->error";
 		}
 	} else if ($event == "pickup") { // $param1 = $gameid, $param2 = $playerid, $param3 = $teamid
 		$query = "INSERT INTO `events` (type, game, player, team) VALUES('7', $param1, $param2, $param3)" ;
 		if ( $result = $mysqli->query($query) ) {
-			
+			echo "7";
 		} else {
 			echo "$mysqli->error";
 		}
@@ -434,7 +438,7 @@ function eventHandler($event, $param1, $param2, $param3, $param4) {
 //and an event getter!
 function getEventFeed($gameid) {
 	global $mysqli;
-	$query = "SELECT * FROM `events` where `game` = $gameid";
+	$query = "SELECT * FROM `events` where `game` = $gameid ORDER BY `event_id`";
 	echo "[";
 	if ($result = $mysqli->query($query)) {
 		/* fetch associative array */
@@ -469,12 +473,13 @@ Players:
 // check if that point is inside the polygon created by that array or not
 // adapted from http://alienryderflex.com/polygon/
 
+ /*
 function pointInPolygon($lat,$long, $latBounds, $longBounds, $n) {
 	$j = $n -1;
 	$oddNodes = false;
 	//latitude = Y coordinate, longitude = X coordinate
 	
-	for ($i=0; $i<$n; i++) {
+	for ($i=0; $i<$n; $i++) {
 		if ($latBounds[$i]<$lat && $latBounds[$j]>=$lat ||  $latBounds[$j]<$lat && $latBounds[$i]>=$lat) {
 			if ($longBounds[$i]+($lat-$latBounds[$i])/($latBounds[$j]-$latBounds[$i])*($longBounds[$j]-$longBounds[$i])<$long) {
 				$oddNodes =! $oddNodes; 
@@ -482,44 +487,115 @@ function pointInPolygon($lat,$long, $latBounds, $longBounds, $n) {
 		} 
 		$j=$i;
 	 }
-	
+var_dump(oddNodes);
 return oddNodes; 
+}*/
+
+function pointInPolygon($lat, $long, $latBounds, $longBounds, $n) {
+	//echo "PIP called \n";
+	$i = $n;
+	$j = $n;
+	$c = false;
+	
+	  for ($i = 0, $j = $n - 1; $i < $n; $j = $i++) {
+		if( (( ($latBounds[$i] >= $lat) != ($latBounds[$j] >= $lat) )) &&  ( ($long <= ($longBounds[$j] - $longBounds[$i]) * ($lat - $latBounds[$i]) / ($latBounds[$j] - $latBounds[$i]) + $longBounds[$i]) ) ) {
+			//if ( ( ($latBounds[$i]) >= point.y ) != (points[j].y >= point.y) ) && (point.x <= (points[j].x - points[i].x) * (point.y - points[i].y) / (points[j].y - points[i].y) + points[i].x) )
+			//for (i = 0, j = nvert-1; i < nvert; j = i++) { 
+			//if ( ((verty[i]>testy) != (verty[j]>testy)) &&(testx < (vertx[j]-vertx[i]) * (testy-verty[i]) / (verty[j]-verty[i]) + vertx[i]) )
+			$c = !$c;
+		}
+		
+	}
+	return $c;
+	
 }
 
 
 
+function pointinPolygonCaller ($x, $y, $gameid, $teamid) {
+	global $mysqli;
+	//echo "PIPCaller called \n";
+	$query = "SELECT `latBounds`, `longBounds` FROM `bounds` WHERE `game_id` = $gameid AND `team_id` != $teamid";
+	$latBounds = array();
+	$longBounds = array();
+	if($result = $mysqli->query($query)) {
+		//echo "Query successful \n";
+		$n = $result->num_rows;
+		//echo "$n";
+		$flip = true;
+		for($i = 0; $i < $n-1; $i++) {
+			while ($row = $result->fetch_row()) {
+			//for($i = 0; $i < $n-1; $i++) {
+				if(array_key_exists(0, $row)){
+					array_push ($latBounds, $row[0]);
+				} if(array_key_exists(1, $row)){
+					array_push ($longBounds, $row[1]);
+				}
+			}
+		}
+		//var_dump($latBounds);
+		//var_dump($longBounds);
+		$answer = pointInPolygon($y, $x, $latBounds, $longBounds, $n);
+		//var_dump($answer);
+		if($answer == true){
+			echo "The point lies within the bounds.";
+		} else if ($answer != true) {
+			echo "The point is outside the bounds.";
+		}
+	} else {
+		echo "$mysqli->error";
+	}
+
+}
+
 //betterCreateGame()
 //NEEDS to implement a way to generate random lat/long for flags, given bounds. 
 
-function createBetterGame($name, $bounds) {
+function createGame($name, $bounds1, $bounds2) { //take in bounds as /creategame/x,y;x,y;x,y; -  bounds param a string you parse and split into coordinate array - requires two, one for each team
 	global $mysqli;
+	$bound1Array = explode(';', $bounds1);
+	$bound2Array = explode(';', $bounds2);
+	
+	//2d arrays for storing all the coordinates to pass to Jack's code
+	$rb1a = Array(Array());
+	$rb2a = Array(Array());
+	
 	$query = "INSERT INTO `games` (name) VALUES($name)" ;
 	if ($result = $mysqli->query($query)) {
 		//echo "You inserted $name.";
 		$result->free();
 	}
-	$query = "SELECT `game_id` FROM `games` WHERE `name` = $name"; //names are unique (now)!
-	if ($result = $mysqli->query($query)) {
-		while($row = $result->fetch_row() ) {
-			//CODE HERE TO CREATE RANDOM LAT/LONGS WITHIN BOUNDS FOR FLAGS
-	
+	$gameid = $mysqli->insert_id;
+			//MULTIQUERY TO ADD ALL PASSED BOUNDS
+	$query2 = "";
 			//$query2 = "INSERT INTO `objects` (game_id, state, team, lat, long) VALUES($row[0], 0, 1, 1, 1 )" ; //instantiate team one's flag
-			//$query3 = "INSERT INTO `bounds` (game_id, team_id, bounds) VALUES ($row[0], 1, $bounds)" l // instantiate team one's bounds (SOMETHING LIKE THIS, PROBABLY A FOREACH LOOP)
-			// if($result3 = $mysqli->query($query3){$result3->free();}
-			if($result2 = $mysqli->query($query2)) {
-				$result2->free();
-			}
-			//$query2 = "INSERT INTO `objects` (game_id, state, team, lat, long) VALUES($row[0], 0, 2, 1, 1 )" ; //instantiate team two's flag
-			//$query3 = "INSERT INTO `bounds` (game_id, team_id, bounds) VALUES ($row[0], 2, $bounds)" l // instantiate team two's bounds (SOMETHING LIKE THIS, PROBABLY A FOREACH LOOP)
-			// if($result3 = $mysqli->query($query3){$result3->free();}
-			if($result2 = $mysqli->query($query2)) {
-				$result2->free();
-			}
-		}
-		$result->free();
+	foreach($boun1dArray as $a) {
+		$a2 = explode(',', $a);
+		array_push($rb1a, $a2[0]);
+		array_push($rb1a, $a2[1]);
+		$query2 . "INSERT INTO bounds (`game_id`, `team_id`, `latBounds`, `longBounds`) VALUES ('$game_id', '1', '$a2[0]', '$a2[1]');";
 	}
+	foreach ($bound2Array as $a3) {
+		$a4 = explode(',', $a3);
+		array_push($rb2a, $a4[0]);
+		array_push($rb2a, $a4[1]);
+		$query2 . "INSERT INTO bounds (`game_id`, `team_id`, `latBounds`, `longBounds`) VALUES ('$game_id', '2', '$a4[0]', '$a4[1]');";
+	}
+	//CALL JACK'S CODE
+	$points1 = pickPointsInBounds($rb1a, 1); //One point, for now.
+	$points2 = pickPointsInBounds($rb2a, 1); // ''
 	
+	$query2 . "INSERT INTO objects (`game_id`, `state`, `team`, `lat`, `long`) VALUES('$gameid', '0', '1', '$points1[0]', '$points1[1]') ;" ; //instantiate team one's flag
+	$query2 . "INSERT INTO objects (`game_id`, `state`, `team`, `lat`, `long`) VALUES('$gameid', '0', '2', '$points2[0]', '$points2[1]') ;" ; //instantiate team two's flag
+	
+	if ($result = $mysqli->multi_query($query2)) {
+		//echo "You inserted bounds!
+		$result->free();
+	} else {
+		echo "$mysqli->error";
+	}
 }
+
 
 function addPlayer($team) {
 	global $mysqli;
@@ -530,25 +606,158 @@ function addPlayer($team) {
 }
 //addPlayer()
 
+function postBounds($gameid, $teamid, $latBound, $longBound) {
+	global $mysqli;
+	$query = "INSERT INTO bounds (`game_id`, `team_id`, `latBounds`, `longBounds`) VALUES ('$gameid', '$teamid', '$latBound', '$longBound')";
+	if ($result = $mysqli->query($query) ) {
+		echo "Bounds posted";
+		$result->free();
+	}  else {
+		echo "$mysqli->error";
+	}
+
+}
+
+function joinGame($gameid, $teamid){
+	global $mysqli;
+	$query = "INSERT INTO players (`game_id`, `team`) VALUES ('$gameid', '$teamid')";
+	if ($result = $mysqli->query($query)) {
+		echo "$mysqli->insert_id";
+	} $result->free();
+}
+
+//Beginning of Jack's code
+/*
+function pickPointsInBounds($bounds, $numPoints) {
+	$points = Array();
+	$triangles = triangulate($bounds);
+
+	for($i = 0; $i < $numPoints; $i++) {
+
+		$rand = mt_rand() / mt_getrandmax();
+
+		$area = 0;
+		foreach($triangles as $t) {
+			$area += $t[3];
+		}
+
+		$r = $rand * $area;
+
+		$current = 0;
+		foreach($triangles as $t) {
+			$current += $t[3];
+				
+			if($current > $r) {
+				$p = randInTriangle($t);
+
+				if(isValid($p)) {
+					array_push($points, $p);
+						
+					if(array_count_values($points) == $numPoints) {
+						return $points;
+					}
+				}
+
+				break;
+			}
+		}
+	}
+
+	return $points;
+} 
+
+function isValid($p) {
+	$ground = 0xffffff;
+	$groundCity = 0x700000;
+
+	$i = imagecreatefrompng(getURL($p));
+
+	$c = dechex(imagecolorat($i, 4, 4));
+
+	return $c == $ground || $c == $groundCity;
+}
+
+function triangulate($points) {
+
+	if(array_count_values($points) < 3) {
+		return [];
+	}
+
+	$t = array_slice($points, 0, 3);
+
+	$area = abs((($t[0][0]*($t[1][1] - $t[2][1]))+($t[1][0] * ($t[0][1]-$t[2][1]))+($t[2][0] * ($t[0][1] - $t[1][1])))/2);
+	array_push($t, $area);
+
+	if(array_count_values($points) == 0) {
+		return [$t];
+	}
+
+	array_unshift($points, $t[0], $t[2]);
+
+	return array_push(triangulate($points), $t);
+}
+
+function randInTriangle($t) {
+
+	$rand1 = mt_rand() / mt_getrandmax();
+	$rand2 = mt_rand() / mt_getrandmax();
+
+	$tmp = sqrt($rand1);
+
+	$lat = (1-$tmp) * $t[0][0] + ($tmp * (1-$rand2)) * $t[1][0] + ($tmp * $rand2) * $t[2][0];
+	$lng = (1-$tmp) * $t[0][1] + ($tmp * (1-$rand2)) * $t[1][1] + ($tmp * $rand2) * $t[2][1];
+
+	return [$lat, $lng];
+} 
+
+function getURL($p) {
+	return "http://maps.googleapis.com/maps/api/staticmap"
+			. "?center=$p[0],$p[1]"
+			. "&zoom=21"
+	. "&format=png"
+	. "&sensor=false"
+	. "&size=10x10"
+	. "&maptype=roadmap"
+	. "&style=feature:administrative|element:geometry|color:0x7d8080|visibility:off"
+	. "&style=element:labels|color:0x808080|visibility:off"
+	. "&style=feature:poi|element:geometry|visibility:off"
+	. "&style=feature:road|color:0x000000"
+	. "&style=feature:transit|element:geometry|color:0x000000"
+	. "&style=feature:water|element:geometry|color:0x000000"
+	. "&style=feature:landscape|element:geometry.stroke|visibility:off"
+	. "&style=feature:landscape.natural|color:0xffffff"
+	. "&style=feature:landscape.man_made|lightness:-74|saturation:100|gamma:0.75|hue:0xff0000";
+} 
+*/
+//End of Jack's code
 
 
-Flight::route('/@type(/@param1(/@param2(/@param3)))', function($type, $param1, $param2, $param3){
-    if ($type == "getgame" && $param1 != null) {
-        getGame($param1); 
-    } else if ($type == "creategame" && $param1 !=null) {
-		createGame($param1);
+
+Flight::route('/@type(/@param1(/@param2(/@param3(/@param4))))', function($type, $param1, $param2, $param3, $param4){
+	if ($type == "getgame" && $param1 != null) {
+		getGame($param1); // /arugula/getgame/(gameid)
+	} else if ($type == "creategame" && $param1 !=null && $param2 != null && $param3 != null) {
+		createGame($param1, $param2, $param3); // /arugula/creategame/(name)/(boundstr1)/(boundstr2)
 	} else if ($type == "getall") {
 		getAllGames();
 	} else if ($type == "gpsupdate" && $param1 != null && $param2 != null && $param3 != null){
 		gpsUpdate($param1, $param2, $param3);
 	} else if ($type == "getplayers" && $param1 != null) {
-		getPlayers($param1);
+			getPlayers($param1);
 	} else if ($type == "makeflag" && $param1 != null && $param2 != null && $param3 != null){
 		makeFlag($param1, $param2, $param3);
 	} else if ($type == "getflag" && $param1 != null) {
-		getFlag($param1);
+			getFlag($param1);
 	} else if ($type == "eventfeed" && $param1 != null) {
-		getEventFeed($param1);
+			getEventFeed($param1);
+	} else if ($type == "postbound" && $param1 != null && $param2 != null && $param3 != null && $param4 != null){
+		postBounds($param1, $param2, $param3, $param4);
+	} else if ($type == "getgameid" && $param1 != null) {
+			getGameID($param1);
+	} else if ($type == "joingame" && $param1 != null && $param2 != null) {
+		joinGame($param1, $param2);
+	} else if ($type == "pip" && $param1 != null && $param2 != null && $param3 != null && $param4 != null) {
+		pointinPolygonCaller($param1, $param2, $param3, $param4);
 	}
 });
 
