@@ -569,16 +569,14 @@ function createGame($name, $bounds1, $bounds2) { //take in bounds as /creategame
 			//MULTIQUERY TO ADD ALL PASSED BOUNDS
 	$query2 = "";
 			//$query2 = "INSERT INTO `objects` (game_id, state, team, lat, long) VALUES($row[0], 0, 1, 1, 1 )" ; //instantiate team one's flag
-	foreach($boun1dArray as $a) {
+	foreach($bound1Array as $a) {
 		$a2 = explode(',', $a);
-		array_push($rb1a, $a2[0]);
-		array_push($rb1a, $a2[1]);
+		array_push($rb1a, $a2);
 		$query2 . "INSERT INTO bounds (`game_id`, `team_id`, `latBounds`, `longBounds`) VALUES ('$game_id', '1', '$a2[0]', '$a2[1]');";
 	}
 	foreach ($bound2Array as $a3) {
 		$a4 = explode(',', $a3);
-		array_push($rb2a, $a4[0]);
-		array_push($rb2a, $a4[1]);
+		array_push($rb2a, $a4);
 		$query2 . "INSERT INTO bounds (`game_id`, `team_id`, `latBounds`, `longBounds`) VALUES ('$game_id', '2', '$a4[0]', '$a4[1]');";
 	}
 	//CALL JACK'S CODE
